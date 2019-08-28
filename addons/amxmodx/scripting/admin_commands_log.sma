@@ -12,6 +12,7 @@
  *	- F@nt0m (reloadcfg/readcfg methods)
  *
  * Changelog:
+ *	- 1.2: Optimization.
  *	- 1.1: Fixed two errors: getting the values of the cvars, creating log files.
  *	- 1.0:
  *		- Removed AMX Mod X 1.8.2/1.8.3 support.
@@ -34,7 +35,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "1.1"
+new const PLUGIN_VERSION[] = "1.2";
 
 /****************************************************************************************
 ****************************************************************************************/
@@ -44,30 +45,35 @@ new const g_szCfgFileName[] = "acl_list.ini";
 
 new g_szLogFile[PLATFORM_MAX_PATH];
 new g_iCvarType;
-// acl_type = 2 || acl_type = 3
-new g_szCommands[256][64], g_iCommandsNum;
 new g_iAccess = (ADMIN_KICK|ADMIN_BAN|ADMIN_CFG|ADMIN_RCON|ADMIN_LEVEL_A);
+
+new Trie:g_tCommands;
 
 public plugin_init()
 {
 	register_plugin("Admin Commands Log", PLUGIN_VERSION, "w0w");
 	register_dictionary("admin_commands_log.txt");
 
+	g_tCommands = TrieCreate();
+
 	new pCvar;
 
 	// 0 - logging all commands which starts with "amx_"; 1 - logging all commands from the cfg file; 2 - values 0 and 1 of this CVar are combined
-	create_cvar("acl_type", "0", FCVAR_NONE, fmt("%l", "ACL_CVAR_TYPE"), true, 0.0, true, 2.0);
+	create_cvar("acl_type", "0", FCVAR_NONE, fmt("%L", LANG_SERVER,  "ACL_CVAR_TYPE"), true, 0.0, true, 2.0);
 
 	// Logging will only for for players who has one of the specified flags
-	pCvar = create_cvar("acl_access", "cdhlm", FCVAR_NONE, fmt("%l", "ACL_CVAR_ACCESS"));
+	pCvar = create_cvar("acl_access", "cdhlm", FCVAR_NONE, fmt("%L", LANG_SERVER, "ACL_CVAR_ACCESS"));
 	hook_cvar_change(pCvar, "hook_CvarChange_Access");
 
 	// 0 - log all commands to a file; 1 - log all commands to a different file created every day; 2 - log all commands to a different file created every month
-	create_cvar("acl_log_type", "0", FCVAR_NONE, fmt("%l", "ACL_CVAR_LOG_TYPE"), true, 0.0, true, 2.0);
+	create_cvar("acl_log_type", "0", FCVAR_NONE, fmt("%L", LANG_SERVER, "ACL_CVAR_LOG_TYPE"), true, 0.0, true, 2.0);
 	// Flag to use the command acl_reloadcfg
-	create_cvar("acl_reloadcfg_access", "h", FCVAR_NONE, fmt("%l", "ACL_CVAR_RELOADCFG_ACCESS"));
+	create_cvar("acl_reloadcfg_access", "h", FCVAR_NONE, fmt("%L", LANG_SERVER, "ACL_CVAR_RELOADCFG_ACCESS"));
 
 	AutoExecConfig(true, "admin_commands_log");
+
+	pCvar = register_cvar("acl_version", PLUGIN_VERSION, FCVAR_SERVER|FCVAR_SPONLY);
+	set_pcvar_string(pCvar, PLUGIN_VERSION);
 }
 
 public OnConfigsExecuted()
@@ -105,9 +111,6 @@ public OnConfigsExecuted()
 		add(szPath, charsmax(szPath), szFileName);
 		get_time(szPath, g_szLogFile, charsmax(g_szLogFile));
 	}
-
-	new pCvar = register_cvar("acl_version", PLUGIN_VERSION, FCVAR_SERVER|FCVAR_SPONLY);
-	set_pcvar_string(pCvar, PLUGIN_VERSION);
 }
 
 public client_command(id)
@@ -129,12 +132,12 @@ public client_command(id)
 		}
 		case 1:
 		{
-			if(!func_CommandInList(szCommand))
+			if(!TrieKeyExists(g_tCommands, szCommand))
 				return PLUGIN_CONTINUE;
 		}
 		case 2:
 		{
-			if(!func_CommandInList(szCommand) && containi(szCommand, "amx_") == -1)
+			if(!TrieKeyExists(g_tCommands, szCommand) && containi(szCommand, "amx_") == -1)
 				return PLUGIN_CONTINUE;
 		}
 	}
@@ -153,6 +156,7 @@ public client_command(id)
 func_LogToFile(id, szCommand[], szArgs[] = "")
 {
 	new szAuthID[MAX_AUTHID_LENGTH], szIP[MAX_IP_LENGTH];
+
 	get_user_authid(id, szAuthID, charsmax(szAuthID));
 	get_user_ip(id, szIP, charsmax(szIP), 1);
 
@@ -177,17 +181,17 @@ public func_ConCmdReloadCfg(id, lvl, cid)
 
 bool:func_ReadCfgFile()
 {
-	new szConfigsDir[PLATFORM_MAX_PATH], szFilePath[PLATFORM_MAX_PATH];
-	get_localinfo("amxx_configsdir", szConfigsDir, charsmax(szConfigsDir));
-	formatex(szFilePath, charsmax(szFilePath), "%s/%s", szConfigsDir, g_szCfgFileName);
+	new szPath[PLATFORM_MAX_PATH];
+	get_localinfo("amxx_configsdir", szPath, charsmax(szPath));
+	format(szPath, charsmax(szPath), "%s/%s", szPath, g_szCfgFileName);
 
-	new iFileHandle = fopen(szFilePath, "rt");
+	new iFileHandle = fopen(szPath, "rt");
+
 	if(!iFileHandle)
 		return false;
 
-	g_iCommandsNum = 0;
-
 	new szString[256];
+
 	while(!feof(iFileHandle))
 	{
 		fgets(iFileHandle, szString, charsmax(szString));
@@ -198,25 +202,12 @@ bool:func_ReadCfgFile()
  
 		remove_quotes(szString);
  
-		copy(g_szCommands[g_iCommandsNum], sizeof g_szCommands[], szString);
-		g_iCommandsNum++;
- 
-		if(g_iCommandsNum >= sizeof g_szCommands)
-			break;
+		TrieSetCell(g_tCommands, szString, 0);
 	}
 
 	fclose(iFileHandle);
-	return true;
-}
 
-bool:func_CommandInList(const szCommand[])
-{
-    for(new i; i < g_iCommandsNum; i++)
-	{
-        if(equal(g_szCommands[i], szCommand))
-            return true;
-    }
-    return false;
+	return true;
 }
 
 public hook_CvarChange_Access(pCvar, const szOldValue[], const szNewValue[])
