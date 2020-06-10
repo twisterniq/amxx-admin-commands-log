@@ -1,0 +1,29 @@
+[bp] 
+ACL_CVAR_TYPE = 0 - logando todos comandos que comecem com "amx_"^n1 - logando todos comandos de acl_list.ini^n2 - valores 0 e 1 do CVar estao combinados
+ACL_CVAR_ACCESS = Somente jogadores com Flags especificas serao logados
+ACL_CVAR_LOG_TYPE = 0 - salvar todos comandos em um arquivo^n1 - salvar todos comandos em um arquivo diferente todos os dias^n2 - salvar todos os comandos em um arquivo diferente todos os meses
+ACL_CVAR_RELOADCFG_ACCESS = Flag para acessar o comando acl_reloadcfg
+
+[en]
+ACL_CVAR_TYPE = Type of log^n0 - to log all commands that starts with "amx_"^n1 - to log all commands from acl_list.ini^n2 - both actions
+ACL_CVAR_ACCESS = Commands will be logged only for players who has one of the specified flags^nIf it's not specified, commands from everyone all logged
+ACL_CVAR_LOG_TYPE = Type of log to file. 0 - log to one file^n1 - log to a different file created every day^n2 - log to a different file created every month
+ACL_CVAR_RELOADCFG_ACCESS = Flag to use the command acl_reloadcfg
+
+[es]
+ACL_CVAR_TYPE = Tipo de apunte.^n0 - todos los comandos que empiezan por "amx_"^n1 - todos los comandos de acl_list.ini^n2 - ambos
+ACL_CVAR_ACCESS = Solo se apuntará si el que pone el comando tiene uno de los flags indicados en este CVar
+ACL_CVAR_LOG_TYPE = Forma de apunte del archivo^n0 - apuntar los comandos a un solo archivo^n1 - apuntar a uno creado cada día^n2 - apuntar a uno creado cada mes
+ACL_CVAR_RELOADCFG_ACCESS = Flag para usar el comando acl_reloadcfg
+
+[ru]
+ACL_CVAR_TYPE = Тип логирования.^n0 - все команды начинающиеся с "amx_"^n1 - все команды из файла acl_list.ini^n2 - комбинировать оба варианта
+ACL_CVAR_ACCESS = Логирование будет действовать только на игроков что имеют любой из указанных флагов^nЕсли не указано, то для всех
+ACL_CVAR_LOG_TYPE = Тип записи в файл.^n0 - записывать всё в 1 файл^n1 - 1 файл - 1 день^n2 - 1 файл - 1 месяц
+ACL_CVAR_RELOADCFG_ACCESS = Флаг для использования команды acl_reloadcfg
+
+[tr]
+ACL_CVAR_TYPE = 0 - "amx_" ile baslayan butun komutlari kaydet^n1 - dosya acl_list.ini'den kaydet^n2 - Bu cvar'in 0 ve 1 degerlerinin kombini 
+ACL_CVAR_ACCESS = Sadece belirli yetkilere sahip oyuncular icin kaydet
+ACL_CVAR_LOG_TYPE = 0 - butun komutlari bir dosyaya kaydet^n1 - butun komutlari her gun olusturulan farkli dosyalara kaydet^n2 - butun dosyalari her ay olusturulan farkli dosyalara kaydet
+ACL_CVAR_RELOADCFG_ACCESS = acl_reloadcfg komutunu kullanmak icin yetki
