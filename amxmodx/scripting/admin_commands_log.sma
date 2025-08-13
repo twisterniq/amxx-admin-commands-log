@@ -1,6 +1,4 @@
 /*
- *	- Official resource topic: https://dev-cs.ru/resources/575/
- *
  * Credits to:
  *	- DrStrange (the idea)
  *	- mx?!
